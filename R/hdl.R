@@ -251,7 +251,7 @@ cat("\n")
   gwas2.df$A1 <- as.character(gwas2.df$A1)
   gwas2.df$A2 <- as.character(gwas2.df$A2)
   
-  
+  #MOD CHANGE
   N0 = min(gwas1.df$N,gwas2.df$N,na.rm = TRUE)
   
   if (!("Z" %in% colnames(gwas1.df))) {
@@ -517,8 +517,33 @@ vcor<-cov2cor(V)
 #rescale the sampling correlation matrix by the appropriate diagonals
 V<-diag(Dvcovl)%*%vcor%*%diag(Dvcovl)
 
-colnames(S) <- trait.names  
+colnames(S) <- trait.names
 
-return(list(V = V,S = S,I = I,complete=complete))
+#MOD ADDITION - from the gsem multivariate ldsc
+if(all(diag(S) > 0)){
+  
+  ##calculate standardized results
+  ratio <- tcrossprod(1 / sqrt(diag(S)))
+  S_Stand <- S * ratio
+  
+  #calculate the ratio of the rescaled and original S matrices
+  scaleO <- gdata::lowerTriangle(ratio, diag = TRUE)
+  
+  ## MAke sure that if ratio in NaN (devision by zero) we put the zero back in
+  # -> not possible because of 'all(diag(S) > 0)'
+  # scaleO[is.nan(scaleO)] <- 0
+  
+  #rescale the sampling correlation matrix by the appropriate diagonals
+  V_Stand <- V * tcrossprod(scaleO)
+  
+  #enter SEs from diagonal of standardized V
+  r<-nrow(S)
+  SE_Stand<-matrix(0, r, r)
+  SE_Stand[lower.tri(SE_Stand,diag=TRUE)] <-sqrt(diag(V_Stand))
+}else{
+  warning("Your genetic covariance matrix includes traits estimated to have a negative heritability.")
+}
+
+return(list(V = V,S = S,I = I,complete=complete,V_Stand=V_Stand,S_Stand=S_Stand))
 }
 
