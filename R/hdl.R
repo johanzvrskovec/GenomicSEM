@@ -520,6 +520,8 @@ V<-diag(Dvcovl)%*%vcor%*%diag(Dvcovl)
 colnames(S) <- trait.names
 
 #MOD ADDITION - from the gsem multivariate ldsc
+#Produce a warning and continue rather than abort the whole computation of standardised results.
+#TODO Store warnings and error statuses in a special error object to be returned by the function.
 if(!all(diag(S) > 0)){
   warning("Your genetic covariance matrix includes traits estimated to have a negative heritability.")
 }
@@ -532,7 +534,7 @@ S_Stand <- S * ratio
 scaleO <- gdata::lowerTriangle(ratio, diag = TRUE)
 
 ## Make sure that if ratio in NaN (devision by zero) we put the zero back in
-# -> not possible because of 'all(diag(S) > 0)'
+# Now possible because of 'all(diag(S) > 0)' not true anymore
 scaleO[is.nan(scaleO)] <- 0
 
 #rescale the sampling correlation matrix by the appropriate diagonals
@@ -546,4 +548,73 @@ SE_Stand[lower.tri(SE_Stand,diag=TRUE)] <-sqrt(diag(V_Stand))
 
 return(list(V = V,S = S,I = I,complete=complete,V_Stand=V_Stand,S_Stand=S_Stand))
 }
+
+hdl.original<-function(traits,sample.prev,population.prev,trait.names,LD.path,jackknife){
+  
+  #for testing
+  # traits = project$sumstats.sel$mungedpath
+  # sample.prev = project$sumstats.sel$samplePrevalence
+  # population.prev = project$sumstats.sel$populationPrevalence
+  # trait.names=project$sumstats.sel$code
+  # LD.path=project$folderpath.data.HLD.ld
+  # jackknife = FALSE
+  
+  
+  n.traits<-length(traits)
+  result.S<-matrix(data=NA,nrow = n.traits, ncol = n.traits)
+  result.S.se<-matrix(data=NA,nrow = n.traits, ncol = n.traits)
+  result.S_std<-matrix(data=NA,nrow = n.traits, ncol = n.traits)
+  result.S_std.se<-matrix(data=NA,nrow = n.traits, ncol = n.traits)
+  result.P<-matrix(data=NA,nrow = n.traits, ncol = n.traits)
+  
+  
+  #traiti<-2
+  #traitj<-3
+  for(traiti in 1:n.traits){
+    gwas1.df <- as.data.frame(suppressMessages(read_delim(traits[traiti], "\t", escape_double = FALSE, trim_ws = TRUE,progress = F)))
+    for(traitj in 1:n.traits){
+      
+      if(traiti==traitj){
+        hdlres.h2<-NA
+        hdlres.h2<-HDL.h2(gwas.df = gwas1.df, LD.path = LD.path)
+        
+        if(is.na(hdlres.h2)) {
+          result.S[traiti,traitj]<-NA_real_
+          result.S.se[traiti,traitj]<-NA_real_
+          result.S_std[traiti,traitj]<-NA_real_
+          result.S_std.se[traiti,traitj]<-NA_real_
+          result.P[traiti,traitj]<-NA_real_
+        } else {
+          result.S[traiti,traitj]<-hdlres.h2$h2
+          result.S.se[traiti,traitj]<-hdlres.h2$h2.se
+          result.S_std.se[traiti,traitj]<-1
+          result.P[traiti,traitj]<-hdlres.h2$P
+        }
+        
+      } else {
+        gwas2.df <- as.data.frame(suppressMessages(read_delim(traits[traitj], "\t", escape_double = FALSE, trim_ws = TRUE,progress = F)))
+        hdlres.rg<-NA
+        hdlres.rg<-HDL.rg(gwas1.df = gwas1.df, gwas2.df = gwas2.df, LD.path = LD.path, jackknife.df = jackknife)
+        if(is.na(hdlres.rg)) {
+          result.S[traiti,traitj]<-NA_real_
+          result.S.se[traiti,traitj]<-NA_real_
+          result.S_std[traiti,traitj]<-NA_real_
+          result.S_std.se[traiti,traitj]<-NA_real_
+          result.P[traiti,traitj]<-NA_real_
+        } else {
+          result.S[traiti,traitj]<-hdlres.rg$estimates.df[c('Genetic_Covariance'),1]
+          result.S.se[traiti,traitj]<-hdlres.rg$estimates.df[c('Genetic_Covariance'),2]
+          result.S_std[traiti,traitj]<-hdlres.rg$estimates.df[c('Genetic_Correlation'),1]
+          result.S_std.se[traiti,traitj]<-hdlres.rg$estimates.df[c('Genetic_Correlation'),2]
+          result.P[traiti,traitj]<-hdlres.rg$P
+        }
+      }
+      
+      
+    }
+  }
+  return(list(S=result.S, S.se=result.S.se, S_std=result.S_std, S_std.se=result.S_std.se, P=result.P))
+}
+
+
 
