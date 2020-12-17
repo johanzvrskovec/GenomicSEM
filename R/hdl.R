@@ -549,7 +549,7 @@ SE_Stand[lower.tri(SE_Stand,diag=TRUE)] <-sqrt(diag(V_Stand))
 return(list(V = V,S = S,I = I,complete=complete,V_Stand=V_Stand,S_Stand=S_Stand))
 }
 
-hdl.original<-function(traits,sample.prev,population.prev,trait.names,LD.path,jackknife){
+hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.path,jackknife,liabilityScale=FALSE){
   
   #for testing
   # traits = project$sumstats.sel$mungedpath
@@ -613,6 +613,32 @@ hdl.original<-function(traits,sample.prev,population.prev,trait.names,LD.path,ja
       
     }
   }
+  
+  if(liabilityScale){
+    Liab.S <- matrix(1,nrow=1,ncol=n.traits)
+    
+    for(z in 1:n.traits){
+      pop.prev <- population.prev[z]
+      samp.prev <- sample.prev[z]
+      
+      if(is.na(pop.prev)==F & is.na(samp.prev)==F){
+        conversion.factor <- (pop.prev^2*(1-pop.prev)^2)/(samp.prev*(1-samp.prev)* dnorm(qnorm(1-pop.prev))^2)
+        Liab.S[,z] <- conversion.factor
+      }}
+    
+    S2 <- S
+    
+    
+    ### Scale S to liability:
+    S <- diag(as.vector(sqrt(Liab.S))) %*% S %*% diag(as.vector(sqrt(Liab.S)))
+    
+    #calculate the ratio of the rescaled and original S matrices
+    scaleO=as.vector(lowerTriangle((S/S2),diag=T))
+    
+    colnames(S) <- trait.names
+  }
+  
+  
   return(list(S=result.S, S.se=result.S.se, S_std=result.S_std, S_std.se=result.S_std.se, P=result.P))
 }
 
