@@ -615,7 +615,7 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
   }
   
   if(liabilityScale){
-    Liab.S <- matrix(1,nrow=1,ncol=n.traits)
+    liab.S <- matrix(1,nrow=1,ncol=n.traits)
     
     for(z in 1:n.traits){
       pop.prev <- population.prev[z]
@@ -623,19 +623,19 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
       
       if(is.na(pop.prev)==F & is.na(samp.prev)==F){
         conversion.factor <- (pop.prev^2*(1-pop.prev)^2)/(samp.prev*(1-samp.prev)* dnorm(qnorm(1-pop.prev))^2)
-        Liab.S[,z] <- conversion.factor
+        liab.S[,z] <- conversion.factor
       }}
     
-    S2 <- S
+    S2 <- result.S
     
     
-    ### Scale S to liability:
-    S <- diag(as.vector(sqrt(Liab.S))) %*% S %*% diag(as.vector(sqrt(Liab.S)))
+    ### Scale S (in result.S) to liability:
+    result.S <- diag(as.vector(sqrt(liab.S))) %*% result.S %*% diag(as.vector(sqrt(liab.S)))
     
     #calculate the ratio of the rescaled and original S matrices
-    scaleO=as.vector(lowerTriangle((S/S2),diag=T))
+    scaleO=as.vector(lowerTriangle((result.S/S2),diag=T))
     
-    colnames(S) <- trait.names
+    colnames(result.S) <- trait.names
   }
   
   
