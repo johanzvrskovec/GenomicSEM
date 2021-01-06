@@ -549,7 +549,7 @@ SE_Stand[lower.tri(SE_Stand,diag=TRUE)] <-sqrt(diag(V_Stand))
 return(list(V = V,S = S,I = I,complete=complete,V_Stand=V_Stand,S_Stand=S_Stand))
 }
 
-hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.path,jackknife,liabilityScale=FALSE){
+hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.path,liabilityScale=FALSE){
   
   #for testing
   # traits = project$sumstats.sel$mungedpath
@@ -557,7 +557,6 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
   # population.prev = project$sumstats.sel$populationPrevalence
   # trait.names=project$sumstats.sel$code
   # LD.path=project$folderpath.data.HLD.ld
-  # jackknife = FALSE
   
   
   n.traits<-length(traits)
@@ -594,7 +593,7 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
       } else {
         gwas2.df <- as.data.frame(suppressMessages(read_delim(traits[traitj], "\t", escape_double = FALSE, trim_ws = TRUE,progress = F)))
         hdlres.rg<-NA
-        hdlres.rg<-HDL.rg(gwas1.df = gwas1.df, gwas2.df = gwas2.df, LD.path = LD.path, jackknife.df = jackknife)
+        hdlres.rg<-HDL.rg(gwas1.df = gwas1.df, gwas2.df = gwas2.df, LD.path = LD.path)
         if(is.na(hdlres.rg)) {
           result.S[traiti,traitj]<-NA_real_
           result.S.se[traiti,traitj]<-NA_real_
@@ -635,9 +634,9 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
     #calculate the ratio of the rescaled and original S matrices
     scaleO=as.vector(lowerTriangle((result.S/S2),diag=T))
     
-    colnames(result.S) <- trait.names
   }
   
+  colnames(result.S) <- trait.names
   
   return(list(S=result.S, S.se=result.S.se, S_std=result.S_std, S_std.se=result.S_std.se, P=result.P))
 }
