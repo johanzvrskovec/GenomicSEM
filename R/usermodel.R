@@ -65,9 +65,7 @@ usermodel <-function(covstruc,estimation="DWLS", model = "", CFIcalc=TRUE, std.l
   }
   
   ##replace trait names in user provided model with general form of V1-VX
-  for(i in 1:length(traits)){
-    model<-gsub(traits2[[i]], S_names[[i]], model)
-  }
+  model<-mgsub::mgsub(string = model, pattern = traits2, replacement = S_names)
   
   Model1<-model
   
@@ -144,7 +142,8 @@ usermodel <-function(covstruc,estimation="DWLS", model = "", CFIcalc=TRUE, std.l
   Z_pre<-S_LDb/SE_pre
   Z_post<-S_LD/SE_post
   Z_diff<-max(abs(Z_pre-Z_post),na.rm=T)
-  
+  rm(S_LDb,V_LDb,SE_pre,SE_post)
+ 
   ##run model that specifies the factor structure so that lavaan knows how to rearrange the V (i.e., sampling covariance) matrix
   #transform V_LD matrix into a weight matrix: 
   W <- solve(V_LD)
@@ -847,7 +846,7 @@ usermodel <-function(covstruc,estimation="DWLS", model = "", CFIcalc=TRUE, std.l
           dfCFI <- (((k * (k + 1))/2) - k)
           
           ##df of user model
-          df <- (k * (k + 1)/2) - max(parTable(Model1_Results)$free)
+          df <- lavInspect(Model1_Results, "fit")["df"]
           
           if(!(is.character(Q_CFI_WLS)) & !(is.character(Q_WLS))){
             CFI<-as.numeric(((Q_CFI_WLS-dfCFI)-(Q_WLS-df))/(Q_CFI_WLS-dfCFI))
@@ -1009,7 +1008,7 @@ usermodel <-function(covstruc,estimation="DWLS", model = "", CFIcalc=TRUE, std.l
           modelfit<-cbind(chisq,df,AIC,CFI,SRMR)}else{modelfit<-cbind(chisq,df,AIC,SRMR)}
         
         std_all<-standardizedSolution(DWLS.fit_stand)
-        std_all<-subset(std_all, std_all$est.std != "NaN" & std_all$est.std != 0)
+        std_all<-subset(std_all, !(is.na(std_all$pvalue)))
         
         results<-cbind(unstand2, stand2)
         
@@ -1408,7 +1407,7 @@ usermodel <-function(covstruc,estimation="DWLS", model = "", CFIcalc=TRUE, std.l
         dfCFI <- (((k * (k + 1))/2) - k)
         
         ##df of user model
-        df <- (k * (k + 1)/2) - max(parTable(Model1_Results)$free)
+        df <- lavInspect(Model1_Results, "fit")["df"]
         
         if(!(is.character(Q_CFI_ML)) & !(is.character(Q_ML))){
           CFI<-as.numeric(((Q_CFI_ML-dfCFI)-(Q_ML-df))/(Q_CFI_ML-dfCFI))
@@ -1518,7 +1517,7 @@ usermodel <-function(covstruc,estimation="DWLS", model = "", CFIcalc=TRUE, std.l
       
       
       std_all<-standardizedSolution(ML.fit_stand)
-      std_all<-subset(std_all, std_all$est.std != "NaN" & std_all$est.std != 0)
+      std_all<-subset(std_all, !(is.na(std_all$pvalue)))
       
       results<-cbind(unstand,SE,stand,SE_stand)
       
@@ -1553,10 +1552,14 @@ usermodel <-function(covstruc,estimation="DWLS", model = "", CFIcalc=TRUE, std.l
     colnames(results)=c("lhs","op","rhs","Unstand_Est","Unstand_SE","STD_Genotype","STD_Genotype_SE", "STD_All")
     
     ##replace V1-VX general form in output with user provided trait names
-    for(i in 1:nrow(results)){
-      for(p in 1:length(traits)){
-        results$lhs[[i]]<-ifelse(results$lhs[[i]] %in% S_names[[p]], gsub(results$lhs[[i]], traits[[p]], results$lhs[[i]]), results$lhs[[i]])
-        results$rhs[[i]]<-ifelse(results$rhs[[i]] %in% S_names[[p]], gsub(results$rhs[[i]], traits[[p]], results$rhs[[i]]), results$rhs[[i]])
+     for(i in 1:nrow(results)){
+      if(results$rhs[[i]] %in% S_names){
+        p<-match(results$rhs[[i]],S_names)
+        results$rhs[[i]]<-gsub(results$rhs[[i]], traits[[p]],results$rhs[[i]])
+      }
+      if(results$lhs[[i]] %in% S_names){
+        p<-match(results$lhs[[i]],S_names)
+        results$lhs[[i]]<-gsub(results$lhs[[i]], traits[[p]],results$lhs[[i]])
       }
     }
     
