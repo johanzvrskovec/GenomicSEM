@@ -66,6 +66,7 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
     }
   }
   
+  ##mod-jz experimental liability scale conversion
   if(liabilityScale){
     liab.S <- matrix(1,nrow=1,ncol=n.traits)
     
@@ -78,28 +79,36 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
         liab.S[,z] <- conversion.factor
       }}
     
-    S2 <- result.S
+    result.S.observed <- result.S
+    result.S_std.observed <- result.S_std
     
     
     ### Scale S (in result.S) to liability:
     result.S <- diag(as.vector(sqrt(liab.S))) %*% result.S %*% diag(as.vector(sqrt(liab.S)))
     
-    ##Experimental HERE!!
-    ### Scale V to liability:
-    ratio <- tcrossprod(sqrt(Liab.S))
-    S <- cov * ratio
+    #calculate the ratio of the rescaled and original S matrices
+    scaleO=as.vector(lowerTriangle((result.S/result.S.observed),diag=T))
+    
+    #rescale the SEs by the same multiples that the S matrix was rescaled by
+    result.S.se<-as.vector(result.S.se*t(scaleO))
+    
+    
+    ### Scale standardised S (in result.S_std) to liability:
+    result.S_std <- diag(as.vector(sqrt(liab.S))) %*% result.S_std %*% diag(as.vector(sqrt(liab.S)))
     
     #calculate the ratio of the rescaled and original S matrices
-    scaleO <- gdata::lowerTriangle(ratio, diag = TRUE)
+    scaleO=as.vector(lowerTriangle((result.S_std/result.S_std.observed),diag=T))
     
-    #rescale the sampling correlation matrix by the appropriate diagonals
-    V <- v.out * tcrossprod(scaleO) #= v.out * scale0 %*% t(scale0)
-    
+    #rescale the SEs by the same multiples that the S matrix was rescaled by
+    result.S_std.se<-as.vector(result.S_std.se*t(scaleO))
     
     
   }
   
   colnames(result.S) <- trait.names
+  colnames(result.S.se) <- trait.names
+  colnames(result.S_std) <- trait.names
+  colnames(result.S_std.se) <- trait.names
   
   return(list(S=result.S, S.se=result.S.se, S_std=result.S_std, S_std.se=result.S_std.se, P=result.P))
 }
