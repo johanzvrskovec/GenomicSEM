@@ -228,7 +228,7 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
     #remove spaces in trait.names file to avoid errors with fread functionality used for s_ldsc
     trait.names[i]<-str_replace_all(trait.names[i], fixed(" "), "") 
     
-    nfilepath<-normalizePath(paste0(path.dir.output,trait.names[i]))
+    nfilepath<-file.path(path.dir.output,trait.names[i])
     write.table(x = output,file = nfilepath,sep="\t", quote = FALSE, row.names = F)
     nfilepath.gzip<-gzip(nfilepath)
     cat(print(paste("I am done munging file:", filenames[i])),file=log.file,sep="\n",append=TRUE)
@@ -241,7 +241,7 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
       for(chr in validChromosomes){
         output.chr<-output[which(output$CHR==chr),c("SNP","ORIGBP","A1","A2")]
         colnames(output.chr)<-c("rsID","pos","A0","A1")
-        write.table(x = output.chr,file = file.path(nfilepath, chr),sep="\t", quote = FALSE, row.names = F)
+        write.table(x = output.chr,file = file.path(paste0(nfilepath,".chr"), chr),sep="\t", quote = FALSE, row.names = F)
       }
     }
     
