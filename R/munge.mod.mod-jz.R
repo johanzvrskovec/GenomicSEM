@@ -239,8 +239,8 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
       dir.create(paste0(nfilepath,".chr"), showWarnings = FALSE)
       validChromosomes<-c(1:22,"X","Y","XY","MT") #as per Plink standard
       for(chr in validChromosomes){
-        output.chr<-output[which(output$CHR==chr),c("SNP","ORIGBP","A1","A2")]
-        colnames(output.chr)<-c("rsID","pos","A0","A1")
+        output.chr<-output[which(output$CHR==chr),c("SNP","ORIGBP","A1","A2","Z")]
+        colnames(output.chr)<-c("rsID","pos","A0","A1","Z")
         write.table(x = output.chr,file = file.path(paste0(nfilepath,".chr"), chr),sep="\t", quote = FALSE, row.names = F)
       }
     }
