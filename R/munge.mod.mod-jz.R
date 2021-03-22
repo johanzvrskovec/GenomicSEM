@@ -1,15 +1,16 @@
-munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0.01,path.dir.output=""){
+munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0.01,path.dir.output="",doChrSplit=FALSE, doStatistics=TRUE){
   
   
   # for testing
   #library(data.table)
   #library(R.utils)
   #files<-c("/Users/jakz/Documents/local_db/JZ_GED_PHD_ADMIN_GENERAL/data/gwas_sumstats/cleaned/ALCD03.gz")
+  #files<-c("/Users/jakz/Documents/local_db/JZ_GED_PHD_ADMIN_GENERAL/data/reference.1000G.maf.0.005.txt")
   #hm3<-"/Users/jakz/Documents/local_db/JZ_GED_PHD_C1/data/w_hm3.snplist.flaskapp2018"
-  #trait.names=c("ALCD03")
+  #trait.names=c("REF1KG")
   #info.filter=0.6
   #maf.filter=0.05
-  #path.dir.output=""
+  #path.dir.output="/Users/jakz/Documents/local_db/JZ_GED_PHD_ADMIN_GENERAL/data/gwas_sumstats/munged"
   
   length <- length(files)
   filenames <- as.vector(files)
@@ -125,6 +126,9 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
         warning(paste0('Discovered MAF values above .5. Converting these to 1-VALUE.',filenames[i]))
         files[[i]]$MAF<-ifelse(files[[i]]$MAF <= .5, files[[i]]$MAF, (1-files[[i]]$MAF))
       }
+    } else {
+      #Add MAF here to not misinterpret any additional MAF column as the GWAS MAF
+      files[[i]]$MAF<-NA_real_
     }
     
     # Compute N is N cases and N control is reported:
@@ -141,8 +145,25 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
     cat(print(paste("Merging file:", filenames[i], "with the reference file:", hm3)),file=log.file,sep="\n",append=TRUE)
     b<-nrow(files[[i]])
     cat(print(paste(b, "rows present in the full", filenames[i], "summary statistics file.")),file=log.file,sep="\n",append=TRUE)
+    
+    
+    ##Addition: produce statistics on non-overlapping SNPs with reference
+    if(doStatistics) {
+      gwas.snps.not.in.ref_filepath<-file.path(path.dir.output,paste0(trait.names[i],".snps.not.in.ref.txt"))
+      gwas.snps.not.in.ref<-merge(ref,files[[i]],by="SNP",all.x=F,all.y=T)
+      gwas.snps.not.in.ref<-gwas.snps.not.in.ref[which(is.na(gwas.snps.not.in.ref$A1.x)),c("SNP")]
+      write.table(x = gwas.snps.not.in.ref,file = gwas.snps.not.in.ref_filepath,sep="\t", quote = FALSE, col.names=F, row.names = F)
+      ref.snps.not.in.gwas_filepath<-file.path(path.dir.output,paste0("ref.snps.not.in.",trait.names[i],".txt"))
+      ref.snps.not.in.gwas<-merge(ref,files[[i]],by="SNP",all.x=T,all.y=F)
+      ref.snps.not.in.gwas<-ref.snps.not.in.gwas[which(is.na(ref.snps.not.in.gwas$A1.y)),c("SNP")]
+      write.table(x = ref.snps.not.in.gwas,file = ref.snps.not.in.gwas_filepath,sep="\t", quote = FALSE, col.names=F, row.names = F)
+    }
+    
     files[[i]] <- merge(ref,files[[i]],by="SNP",all.x=F,all.y=F)
     cat(print(paste((b-nrow(files[[i]])), "rows were removed from the", filenames[i], "summary statistics file as the rs-ids for these rows were not present in the reference file.")),file=log.file,sep="\n",append=TRUE)
+    
+    #immediate rename intruding columns from ref
+    colnames(files[[i]])[colnames(files[[i]])=="MAF.x"]<-"MAF"
     
     ##remove any rows with missing p-values
     b<-nrow(files[[i]])
@@ -159,13 +180,15 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
     if(b-nrow(files[[i]]) > 0) cat(print(paste(b-nrow(files[[i]]), "rows were removed from the", filenames[i], "summary statistics file due to missing values in the effect column")),file=log.file,sep="\n",append=TRUE)
     
     ##determine whether it is OR or logistic/continuous effect based on median effect size 
-    a1<-files[[i]]$effect[[1]]
-    files[[i]]$effect<-ifelse(rep(round(median(files[[i]]$effect,na.rm=T)) == 1,nrow(files[[i]])), log(files[[i]]$effect),files[[i]]$effect)
-    a2<-files[[i]]$effect[[1]]
-    if(a1 != a2) cat(print(paste("The effect column was determined to be coded as an odds ratio (OR) for the", filenames[i], "summary statistics file. Please ensure this is correct.")),file=log.file,sep="\n",append=TRUE)
-    
-    # Flip effect to match ordering in ref file
-    files[[i]]$effect<-ifelse(files[[i]]$A1.x != (files[[i]]$A1.y) & files[[i]]$A1.x == (files[[i]]$A2.y),files[[i]]$effect*-1,files[[i]]$effect)
+    if("effect" %in% colnames(files[[i]])) {
+      a1<-files[[i]]$effect[[1]]
+      files[[i]]$effect<-ifelse(rep(round(median(files[[i]]$effect,na.rm=T)) == 1,nrow(files[[i]])), log(files[[i]]$effect),files[[i]]$effect)
+      a2<-files[[i]]$effect[[1]]
+      if(a1 != a2) cat(print(paste("The effect column was determined to be coded as an odds ratio (OR) for the", filenames[i], "summary statistics file. Please ensure this is correct.")),file=log.file,sep="\n",append=TRUE)
+      
+      # Flip effect to match ordering in ref file
+      files[[i]]$effect<-ifelse(files[[i]]$A1.x != (files[[i]]$A1.y) & files[[i]]$A1.x == (files[[i]]$A2.y),files[[i]]$effect*-1,files[[i]]$effect)
+    }
     
     ##remove SNPs that don't match A1 OR A2 in reference file.
     b<-nrow(files[[i]])
@@ -184,7 +207,9 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
     }
     
     #Compute Z score
-    files[[i]]$Z <- sign(files[[i]]$effect) * sqrt(qchisq(files[[i]]$P,1,lower=F))
+    if("effect" %in% colnames(files[[i]])) {
+      files[[i]]$Z <- sign(files[[i]]$effect) * sqrt(qchisq(files[[i]]$P,1,lower=F))
+    }
     
     ##filter on INFO column at designated threshold provided for the info.filter argument (default = 0.9)
     if("INFO" %in% colnames(files[[i]])) {
@@ -210,11 +235,21 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
     colnames(files[[i]])[colnames(files[[i]])=="A1.x"]<-"A1"
     colnames(files[[i]])[colnames(files[[i]])=="A2.x"]<-"A2"
     
-    #final remove columns
-    files[[i]] <- files[[i]][,!(colnames(files[[i]]) %in% c("effect","A1.y","A2.y"))]
+    colnames(files[[i]])[colnames(files[[i]])=="CHR.x"]<-"CHR"
     
-    output.colnames<- c("SNP","N","Z","A1","A2")
-    output.colnames.more<-colnames(files[[i]])[!(colnames(files[[i]]) %in% c("SNP","N","Z","A1","A2"))]
+    #final remove columns
+    files[[i]] <- files[[i]][,!(colnames(files[[i]]) %in% c("effect","A1.y","A2.y","CHR.y","MAF.y"))]
+    
+    #output.colnames<- c("SNP","N","Z","A1","A2")
+    output.colnames<- c("SNP")
+    if("N" %in% colnames(files[[i]])) {
+      output.colnames<- c(output.colnames,"N")
+    }
+    if("Z" %in% colnames(files[[i]])) {
+      output.colnames<- c(output.colnames,"Z")
+    }
+    output.colnames<- c(output.colnames,c("A1","A2"))
+    output.colnames.more<-colnames(files[[i]])[!(colnames(files[[i]]) %in% output.colnames)]
     
     
     output<-files[[i]][,c(output.colnames,output.colnames.more)]
@@ -235,16 +270,17 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
     cat(print(paste("The file is saved as", nfilepath.gzip, "in the current working directory.")),file=log.file,sep="\n",append=TRUE)
     
     #addition: producing per-chromosome files in a folder, as RAISS columns
-    if("CHR" %in% colnames(files[[i]])){
-      dir.create(paste0(nfilepath,".chr"), showWarnings = FALSE)
-      validChromosomes<-c(1:22,"X","Y","XY","MT") #as per Plink standard
-      for(chr in validChromosomes){
-        output.chr<-output[which(output$CHR==chr),c("SNP","ORIGBP","A1","A2","Z")]
-        colnames(output.chr)<-c("rsID","pos","A0","A1","Z")
-        write.table(x = output.chr,file = file.path(paste0(nfilepath,".chr"), chr),sep="\t", quote = FALSE, row.names = F)
+    if(doChrSplit) {
+      if("CHR" %in% colnames(files[[i]])){
+        dir.create(paste0(nfilepath,".chr"), showWarnings = FALSE)
+        validChromosomes<-c(1:22,"X","Y","XY","MT") #as per Plink standard
+        for(chr in validChromosomes){
+          output.chr<-output[which(output$CHR==chr),c("SNP","ORIGBP","A1","A2","Z")]
+          colnames(output.chr)<-c("rsID","pos","A0","A1","Z")
+          write.table(x = output.chr,file = file.path(paste0(nfilepath,".chr"), chr),sep="\t", quote = FALSE, row.names = F)
+        }
       }
     }
-    
     
   }
   
