@@ -18,8 +18,8 @@ hdl.mod <- function(traits,sample.prev=NA,population.prev=NA,trait.names=NULL,LD
   if(any(grepl(x = LD.files, pattern = "UKB_snp_counter.*"))){
     snp_counter_file <- LD.files[grep(x = LD.files, pattern = "UKB_snp_counter.*")]
     snp_list_file <- LD.files[grep(x = LD.files, pattern = "UKB_snp_list.*")]
-    load(file=paste(LD.path, snp_counter_file, sep = "/"))
-    load(file=paste(LD.path, snp_list_file, sep = "/"))
+    load(file=file.path(LD.path, snp_counter_file))
+    load(file=file.path(LD.path, snp_list_file))
     if("nsnps.list.imputed" %in% ls()){
       snps.name.list <- snps.list.imputed.vector
       nsnps.list <- nsnps.list.imputed
@@ -140,9 +140,8 @@ hdl.mod <- function(traits,sample.prev=NA,population.prev=NA,trait.names=NULL,LD
           for (piece in 1:k) {
             LD_rda_file <- LD.files[grep(x = LD.files, pattern = paste0("chr", chr, ".", piece, ".*rda"))]
             LD_bim_file <- LD.files[grep(x = LD.files, pattern = paste0("chr", chr, ".", piece, ".*bim"))]
-            load(file = paste(LD.path, LD_rda_file, sep = "/"))
-            snps.ref.df <- read.table(paste(LD.path, LD_bim_file, 
-                                            sep = "/"))
+            load(file = file.path(LD.path, LD_rda_file))
+            snps.ref.df <- read.table(file.path(LD.path, LD_bim_file))
             colnames(snps.ref.df) <- c("chr", "id", "non", "pos", "A1", "A2")
             snps.ref <- snps.ref.df$id
             A2.ref <- snps.ref.df$A2
@@ -294,7 +293,7 @@ hdl.mod <- function(traits,sample.prev=NA,population.prev=NA,trait.names=NULL,LD
             LD_rda_file <- LD.files[grep(x = LD.files, pattern = paste0("chr", chr, ".", piece, ".*rda"))]
             LD_bim_file <- LD.files[grep(x = LD.files, pattern = paste0("chr", chr, ".", piece, ".*bim"))]
             load(file = paste(LD.path, LD_rda_file, sep = "/"))
-            snps.ref.df <- read.table(paste(LD.path, LD_bim_file, sep = "/"))
+            snps.ref.df <- read.table(file.path(LD.path, LD_bim_file))
             colnames(snps.ref.df) <- c("chr", "id", "non", "pos", "A1", "A2")
             snps.ref <- snps.ref.df$id
             A2.ref <- snps.ref.df$A2
