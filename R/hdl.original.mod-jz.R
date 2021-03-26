@@ -90,7 +90,7 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
     scaleO=as.vector(lowerTriangle((result.S/result.S.observed),diag=T))
     
     #rescale the SEs by the same multiples that the S matrix was rescaled by
-    result.S.se<-as.vector(result.S.se*t(scaleO))
+    #result.S.se<-as.vector(result.S.se*t(scaleO)) #not working
     
     
     ### Scale standardised S (in result.S_std) to liability:
@@ -100,7 +100,7 @@ hdl.original<-function(traits,sample.prev=NA,population.prev=NA,trait.names,LD.p
     scaleO=as.vector(lowerTriangle((result.S_std/result.S_std.observed),diag=T))
     
     #rescale the SEs by the same multiples that the S matrix was rescaled by
-    result.S_std.se<-as.vector(result.S_std.se*t(scaleO))
+    #result.S_std.se<-as.vector(result.S_std.se*t(scaleO)) #not working
     
     
   }
