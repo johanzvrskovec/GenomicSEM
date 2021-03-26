@@ -277,7 +277,7 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
         for(chr in validChromosomes){
           output.chr<-output[which(output$CHR==chr),c("SNP","ORIGBP","A1","A2","Z")]
           colnames(output.chr)<-c("rsID","pos","A0","A1","Z")
-          write.table(x = output.chr,file = file.path(paste0(nfilepath,".chr"), paste0("z_",trait.names[i],"_",chr)),sep="\t", quote = FALSE, row.names = F)
+          write.table(x = output.chr,file = file.path(paste0(nfilepath,".chr"), paste0("z_",trait.names[i],"_",chr,".txt")),sep="\t", quote = FALSE, row.names = F)
         }
       }
     }
