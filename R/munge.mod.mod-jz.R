@@ -264,10 +264,11 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
     trait.names[i]<-str_replace_all(trait.names[i], fixed(" "), "") 
     
     nfilepath<-file.path(path.dir.output,trait.names[i])
+    if(!doChrSplit){
     write.table(x = output,file = nfilepath,sep="\t", quote = FALSE, row.names = F)
     nfilepath.gzip<-gzip(nfilepath)
-    cat(print(paste("I am done munging file:", filenames[i])),file=log.file,sep="\n",append=TRUE)
-    cat(print(paste("The file is saved as", nfilepath.gzip, "in the current working directory.")),file=log.file,sep="\n",append=TRUE)
+    cat(print(paste("The file is saved as", nfilepath.gzip, "in the specified outoput directory.")),file=log.file,sep="\n",append=TRUE)
+    }
     
     #addition: producing per-chromosome files in a folder, as RAISS columns
     if(doChrSplit) {
@@ -280,7 +281,10 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
           write.table(x = output.chr,file = file.path(paste0(nfilepath,".chr"), paste0("z_",trait.names[i],"_",chr,".txt")),sep="\t", quote = FALSE, row.names = F)
         }
       }
+      cat(print(paste("One file per chromosome have been saved under", paste0(nfilepath,".chr"), "in the specified outoput directory.")),file=log.file,sep="\n",append=TRUE)
     }
+    
+    cat(print(paste("I am done munging file:", filenames[i])),file=log.file,sep="\n",append=TRUE)
     
   }
   
