@@ -16,7 +16,9 @@ munge.mod <- function(files,hm3,trait.names=NULL,N,info.filter = .9,maf.filter=0
   filenames <- as.vector(files)
   
   log2<-paste(trait.names,collapse="_")
-  
+  if(object.size(log2) > 200){
+    log2<-substr(log2,1,100)
+    }
   log.file <- file(file.path(path.dir.output,paste0(log2, "_munge.mod.log")),open="wt")
   
   begin.time <- Sys.time()
