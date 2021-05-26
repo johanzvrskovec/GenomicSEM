@@ -2,6 +2,23 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
                 trait.names = NULL, sep_weights = FALSE, chr = 22,
                 n.blocks = 200, ldsc.log = NULL, stand = FALSE,select=FALSE,chisq.max = NA, info.filter = .6,maf.filter=0.01) {
   
+  # traits = project$sumstats.sel$mungedpath
+  # sample.prev =  project$sumstats.sel$samplePrevalence
+  # population.prev = project$sumstats.sel$populationPrevalence
+  # trait.names = project$sumstats.sel$code
+  # ld = project$folderpath.data.mvLDSC.ld
+  # wld = project$folderpath.data.mvLDSC.ld
+  # n.blocks = 400
+  # info.filter = 0.6
+  # maf.filter = 0.01
+  # ldsc.log = project$setup.code.date
+  # stand = TRUE
+  # select=FALSE
+  # chisq.max = NA
+  # chr = 22
+  # sep_weights = FALSE
+  
+  
   LOG <- function(..., print = TRUE) {
     msg <- paste0(...)
     if (print) print(msg)
@@ -87,7 +104,8 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
     }))
   }
   
-  
+  #mod addition, correct SNP to lower case in case it is upper case
+  x$SNP<-tolower(x$SNP)
   x$CM <- NULL
   x$MAF <- NULL
   
@@ -124,6 +142,8 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
     }
   }else{w<-x}
   
+  #mod addition, correct SNP to lower case in case it is upper case
+  w$SNP<-tolower(w$SNP)
   w$CM <- NULL
   w$MAF <- NULL
   
@@ -162,10 +182,13 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
   s <- 0
   
   all_y <- lapply(traits, function(chi1) {
-    
+    #chi1<-traits[1]
     ## READ chi2
-    y1 <- suppressMessages(na.omit(read_delim(
-      chi1, delim = "\t", escape_double = FALSE, trim_ws = TRUE, progress = FALSE)))
+    y1 <- suppressMessages(read.table(
+      chi1, header=T, quote="\"",fill=T,na.string=c(".",NA,"NA","")))
+    #mod addition, harmonise character case
+    y1$SNP<-tolower(y1$SNP)
+    y1$A1<-toupper(y1$A1)
     
     LOG("Read in summary statistics [", s <<- s + 1, "/", n.traits, "] from: ", chi1)
     
@@ -595,9 +618,26 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
   flush(log.file)
   close(log.file)
   
+  # mod additions - added the suggested computations of standard error matrices from the website
+  rownames(S)<-colnames(S)
+  S.SE<-matrix(0, nrow(S), nrow(S))
+  colnames(S.SE)<-colnames(S)
+  rownames(S.SE)<-colnames(S)
+  S.SE[lower.tri(S.SE,diag=TRUE)] <-sqrt(diag(V))
+  S.SE[upper.tri(S.SE)]<-t(S.SE)[upper.tri(S.SE)]
   if(stand){
-    list(V=V,S=S,I=I,N=N.vec,m=m,V_Stand=V_Stand,S_Stand=S_Stand)
+    colnames(S_Stand)<-colnames(S)
+    rownames(S_Stand)<-colnames(S)
+    S_Stand.SE<-matrix(0, nrow(S_Stand), nrow(S_Stand))
+    colnames(S_Stand.SE)<-colnames(S)
+    rownames(S_Stand.SE)<-colnames(S)
+    S_Stand.SE[lower.tri(S_Stand.SE,diag=TRUE)] <-sqrt(diag(V_Stand))
+    S_Stand.SE[upper.tri(S_Stand.SE)]<-t(S_Stand.SE)[upper.tri(S_Stand.SE)]
+  }
+  
+  if(stand){
+    list(V=V,S=S,S.SE=S.SE,I=I,N=N.vec,m=m,V_Stand=V_Stand,S_Stand=S_Stand,S_Stand.SE,S_Stand.SE)
   } else {
-    list(V=V,S=S,I=I,N=N.vec,m=m)
+    list(V=V,S=S,S.SE,S.SE,I=I,N=N.vec,m=m)
   }
 }
