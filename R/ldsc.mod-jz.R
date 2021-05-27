@@ -1,11 +1,11 @@
 ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
                 trait.names = NULL, sep_weights = FALSE, chr = 22,
-                n.blocks = 200, ldsc.log = NULL, stand = FALSE,select=FALSE,chisq.max = NA, info.filter = .6,maf.filter=0.01) {
+                n.blocks = 200, ldsc.log = NULL, stand = FALSE,select=FALSE,chisq.max = NA, info.filter = .6,maf.filter=0.01, N=NULL, forceN=FALSE) {
   
-  # traits = project$sumstats.sel$mungedpath
-  # sample.prev =  project$sumstats.sel$samplePrevalence
-  # population.prev = project$sumstats.sel$populationPrevalence
-  # trait.names = project$sumstats.sel$code
+  # traits = project$sumstats.sel$mungedpath[1:2]
+  # sample.prev =  project$sumstats.sel$samplePrevalence[1:2]
+  # population.prev = project$sumstats.sel$populationPrevalence[1:2]
+  # trait.names = project$sumstats.sel$code[1:2]
   # ld = project$folderpath.data.mvLDSC.ld
   # wld = project$folderpath.data.mvLDSC.ld
   # n.blocks = 400
@@ -17,6 +17,8 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
   # chisq.max = NA
   # chr = 22
   # sep_weights = FALSE
+  # N = c(53293,46568)
+  # forceN=FALSE
   
   
   LOG <- function(..., print = TRUE) {
@@ -184,48 +186,68 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
   all_y <- lapply(traits, function(chi1) {
     #chi1<-traits[1]
     ## READ chi2
+    ## mod change - use read.table
     y1 <- suppressMessages(read.table(
       chi1, header=T, quote="\"",fill=T,na.string=c(".",NA,"NA","")))
     #mod addition, harmonise character case
-    y1$SNP<-tolower(y1$SNP)
-    y1$A1<-toupper(y1$A1)
+    y1$SNP<-tolower(as.character(y1$SNP))
+    y1$A1<-toupper(as.character(y1$A1))
+    y1$Z<-as.numeric(y1$Z)
+    if('MAF' %in% names(y1)) y1$MAF<-as.numeric(y1$MAF)
+    if('INFO' %in% names(y1)) y1$INFO<-as.numeric(y1$INFO)
+    #mod addition - use explicit new N value
+    if(!is.null(N) & length(N)>=length(traits)) {
+      if(forceN) { 
+        y1$N<-as.integer(N[s])
+        LOG("Added explicit N=",N[s])
+      } else {
+        cond<-is.na(y1$N)
+        y1$N<-ifelse(cond,N[s],y1$N)
+        if(sum(cond)>0) LOG("Added explicit N=",N[s], " to ",sum(cond)," SNPs where it was missing.")
+        }
+    }
     
     LOG("Read in summary statistics [", s <<- s + 1, "/", n.traits, "] from: ", chi1)
-    
-    ## Merge files
-    y1.columns<-c("SNP", "N", "Z", "A1")
-    if('MAF' %in% names(y1)) y1.columns<-c(y1.columns,'MAF')
-    if('INFO' %in% names(y1)) y1.columns<-c(y1.columns,'INFO')
-    
-    merged <- merge(y1[, y1.columns], w[, c("SNP", "wLD")], by = "SNP", sort = FALSE)
-    merged <- merge(merged, x, by = "SNP", sort = FALSE)
-    merged <- merged[with(merged, order(CHR, BP)), ]
-    
-    LOG("Out of ", nrow(y1), " SNPs, ", nrow(merged), " remain after merging with LD-score files")
     
     ##mod addition
     ## REMOVE SNPs MAF<maf.filter and INFO<info.filter
     if(!is.na(maf.filter)){
-      if("MAF" %in% names(merged)){
-        rm <- (merged$MAF<maf.filter)
-        merged <- merged[!rm, ]
-        LOG("Removing ", sum(rm), " SNPs with MAF <", maf.filter, "; ", nrow(merged), " remain")
+      if("MAF" %in% names(y1)){
+        rm <- (!is.na(y1$MAF) & y1$MAF<maf.filter)
+        y1 <- y1[!rm, ]
+        LOG("Removing ", sum(rm), " SNPs with MAF <", maf.filter, "; ", nrow(y1), " remain")
       } else {
-        warning("The dataset does not contain a MAF column to apply the specified filter on.")
+        #warning("The dataset does not contain a MAF column to apply the specified filter on.")
         LOG("Warning: The dataset does not contain a MAF column to apply the specified filter on.")
       }
     }
-    
     if(!is.na(info.filter)){
-      if("INFO" %in% names(merged)){
-      rm <- (merged$INFO<info.filter)
-      merged <- merged[!rm, ]
-      LOG("Removing ", sum(rm), " SNPs with INFO <", info.filter, "; ", nrow(merged), " remain")
+      if("INFO" %in% names(y1)){
+        rm <- (!is.na(y1$INFO) & y1$INFO<info.filter)
+        y1 <- y1[!rm, ]
+        LOG("Removing ", sum(rm), " SNPs with INFO <", info.filter, "; ", nrow(y1), " remain")
       } else {
-        warning("The dataset does not contain an INFO column to apply the specified filter on.")
+        #warning("The dataset does not contain an INFO column to apply the specified filter on.")
         LOG("Warning: The dataset does not contain an INFO column to apply the specified filter on.")
       }
     }
+    
+    ## Merge files
+    y1.columns.orig<-c("SNP", "N", "Z", "A1")
+    y1.columns<-y1.columns.orig
+    ##mod addition
+    if('MAF' %in% names(y1)) y1.columns<-c(y1.columns.orig,'MAF')
+    if('INFO' %in% names(y1)) y1.columns<-c(y1.columns.orig,'INFO')
+    y1<-as_tibble(y1)
+    
+    merged <- merge(y1[, y1.columns.orig], w[, c("SNP", "wLD")], by = "SNP", sort = FALSE)
+    merged <- merge(merged, x, by = "SNP", sort = FALSE)
+    merged <- merged[with(merged, order(CHR, BP)), ]
+    
+    LOG("Out of ", nrow(y1), " SNPs, ", nrow(merged), " remain after merging with LD-score files")
+    LOG("Columns after merge: ", paste(colnames(merged),collapse = " ")) ##mod addition
+    if(all(is.na(merged$N))) LOG("Warning: The data has no N values!!") ##mod addition
+    
     
     ## REMOVE SNPS with excess chi-square:
     
@@ -504,6 +526,9 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
       ### Total count
       s <- s + 1
     }
+    
+    #mod addition
+    gc() #do garbage collect if this can help with out of memory issues.
   }
   
   
