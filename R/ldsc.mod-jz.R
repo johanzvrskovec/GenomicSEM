@@ -1,11 +1,11 @@
 ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
                 trait.names = NULL, sep_weights = FALSE, chr = 22,
-                n.blocks = 200, ldsc.log = NULL, stand = FALSE,select=FALSE,chisq.max = NA, info.filter = .6,maf.filter=0.01, N=NULL, forceN=FALSE) {
+                n.blocks = 600, ldsc.log = NULL, stand = FALSE,select=FALSE,chisq.max = NA, info.filter = .6,maf.filter=0.01, N=NULL, forceN=FALSE) {
   
-  # traits = project$sumstats.sel$mungedpath[1:2]
-  # sample.prev =  project$sumstats.sel$samplePrevalence[1:2]
-  # population.prev = project$sumstats.sel$populationPrevalence[1:2]
-  # trait.names = project$sumstats.sel$code[1:2]
+  # traits = project$sumstats.sel$mungedpath
+  # sample.prev =  project$sumstats.sel$samplePrevalence
+  # population.prev = project$sumstats.sel$populationPrevalence
+  # trait.names = project$sumstats.sel$code
   # ld = project$folderpath.data.mvLDSC.ld
   # wld = project$folderpath.data.mvLDSC.ld
   # n.blocks = 400
@@ -17,7 +17,7 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
   # chisq.max = NA
   # chr = 22
   # sep_weights = FALSE
-  # N = c(53293,46568)
+  # N = project$sumstats.sel$n_total
   # forceN=FALSE
   
   
@@ -582,9 +582,12 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
     }
   }
   
+  #mod additions - initialise S_Stand, set all NA element in S to 0 so not to have NA values
+  S_Stand<-matrix(NA, nrow(S), nrow(S))
+  V_Stand<-matrix(NA, nrow(V), nrow(V))
+  S[is.na(S)]<-0
+  if(all(diag(S) > 0)) {
   
-  if(all(diag(S) > 0)){
-    
     ##calculate standardized results to print genetic correlations to log and screen
     ratio <- tcrossprod(1 / sqrt(diag(S)))
     S_Stand <- S * ratio
@@ -623,7 +626,8 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
         }
       }
     }
-  }else{
+  
+  } else {
     warning("Your genetic covariance matrix includes traits estimated to have a negative heritability.")
     LOG("Your genetic covariance matrix includes traits estimated to have a negative heritability.", print = FALSE)
     LOG("Genetic correlation results could not be computed due to negative heritability estimates.")
