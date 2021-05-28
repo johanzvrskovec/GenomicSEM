@@ -261,8 +261,8 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
     
     ##mod addition - remove any rows with na values as was originally performed earlier before merge
     if(any(is.na(merged))){
-      nBefore<-nrow(merged)
-      merged <- na.remove(merged)
+      nBefore <- nrow(merged)
+      merged <- na.omit(merged)
       LOG("Removing ", nBefore-nrow(merged), " SNPs with NA-values present; ", nrow(merged), " remain")
     }
     
