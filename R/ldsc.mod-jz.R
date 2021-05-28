@@ -672,7 +672,7 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
   }
   
   if(stand){
-    list(V=V,S=S,S.SE=S.SE,I=I,N=N.vec,m=m,V_Stand=V_Stand,S_Stand=S_Stand,S_Stand.SE,S_Stand.SE)
+    list(V=V,S=S,S.SE=S.SE,I=I,N=N.vec,m=m,V_Stand=V_Stand,S_Stand=S_Stand,S_Stand.SE=S_Stand.SE)
   } else {
     list(V=V,S=S,S.SE,S.SE,I=I,N=N.vec,m=m)
   }
