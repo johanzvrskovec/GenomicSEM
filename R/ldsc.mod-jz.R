@@ -2,23 +2,23 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
                 trait.names = NULL, sep_weights = FALSE, chr = 22,
                 n.blocks = 600, ldsc.log = NULL, stand = FALSE,select=FALSE,chisq.max = NA, info.filter = .6,maf.filter=0.01, N=NULL, forceN=FALSE) {
   
-  traits = project$sumstats.sel$mungedpath[c(15,16)]
-  sample.prev =  project$sumstats.sel$samplePrevalence[c(15,16)]
-  population.prev = project$sumstats.sel$populationPrevalence[c(15,16)]
-  trait.names = project$sumstats.sel$code[c(15,16)]
-  ld = project$folderpath.data.mvLDSC.ld
-  wld = project$folderpath.data.mvLDSC.ld
-  n.blocks = 600
-  info.filter = 0.6
-  maf.filter = 0.01
-  ldsc.log = project$setup.code.date
-  stand = TRUE
-  select=FALSE
-  chisq.max = NA
-  chr = 22
-  sep_weights = FALSE
-  N = project$sumstats.sel$n_total[c(15,16)]
-  forceN=FALSE
+  # traits = project$sumstats.sel$mungedpath[c(15,16)]
+  # sample.prev =  project$sumstats.sel$samplePrevalence[c(15,16)]
+  # population.prev = project$sumstats.sel$populationPrevalence[c(15,16)]
+  # trait.names = project$sumstats.sel$code[c(15,16)]
+  # ld = project$folderpath.data.mvLDSC.ld
+  # wld = project$folderpath.data.mvLDSC.ld
+  # n.blocks = 600
+  # info.filter = 0.6
+  # maf.filter = 0.01
+  # ldsc.log = project$setup.code.date
+  # stand = TRUE
+  # select=FALSE
+  # chisq.max = NA
+  # chr = 22
+  # sep_weights = FALSE
+  # N = project$sumstats.sel$n_total[c(15,16)]
+  # forceN=FALSE
   
   
   LOG <- function(..., print = TRUE) {
