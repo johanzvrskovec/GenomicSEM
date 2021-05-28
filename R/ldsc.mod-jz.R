@@ -2,23 +2,23 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
                 trait.names = NULL, sep_weights = FALSE, chr = 22,
                 n.blocks = 600, ldsc.log = NULL, stand = FALSE,select=FALSE,chisq.max = NA, info.filter = .6,maf.filter=0.01, N=NULL, forceN=FALSE) {
   
-  # traits = project$sumstats.sel$mungedpath
-  # sample.prev =  project$sumstats.sel$samplePrevalence
-  # population.prev = project$sumstats.sel$populationPrevalence
-  # trait.names = project$sumstats.sel$code
-  # ld = project$folderpath.data.mvLDSC.ld
-  # wld = project$folderpath.data.mvLDSC.ld
-  # n.blocks = 400
-  # info.filter = 0.6
-  # maf.filter = 0.01
-  # ldsc.log = project$setup.code.date
-  # stand = TRUE
-  # select=FALSE
-  # chisq.max = NA
-  # chr = 22
-  # sep_weights = FALSE
-  # N = project$sumstats.sel$n_total
-  # forceN=FALSE
+  traits = project$sumstats.sel$mungedpath[c(15,16)]
+  sample.prev =  project$sumstats.sel$samplePrevalence[c(15,16)]
+  population.prev = project$sumstats.sel$populationPrevalence[c(15,16)]
+  trait.names = project$sumstats.sel$code[c(15,16)]
+  ld = project$folderpath.data.mvLDSC.ld
+  wld = project$folderpath.data.mvLDSC.ld
+  n.blocks = 600
+  info.filter = 0.6
+  maf.filter = 0.01
+  ldsc.log = project$setup.code.date
+  stand = TRUE
+  select=FALSE
+  chisq.max = NA
+  chr = 22
+  sep_weights = FALSE
+  N = project$sumstats.sel$n_total[c(15,16)]
+  forceN=FALSE
   
   
   LOG <- function(..., print = TRUE) {
@@ -259,6 +259,13 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
     
     LOG("Removing ", sum(rm), " SNPs with Chi^2 > ", chisq.max, "; ", nrow(merged), " remain")
     
+    ##mod addition - remove any rows with na values as was originally performed earlier before merge
+    if(any(is.na(merged))){
+      nBefore<-nrow(merged)
+      merged <- na.remove(merged)
+      LOG("Removing ", nBefore-nrow(merged), " SNPs with NA-values present; ", nrow(merged), " remain")
+    }
+    
     merged
   })
   
@@ -266,14 +273,14 @@ ldsc.mod <- function(traits, sample.prev, population.prev, ld, wld,
   s <- 1
   
   for(j in 1:n.traits){
-    
+    #j<-1
     chi1 <- traits[j]
     
     y1 <- all_y[[j]]
     y1$chi1 <- y1$Z^2
     
     for(k in j:length(traits)){
-      
+      #k<-1
       ##### HERITABILITY code
       
       if(j == k){
