@@ -1709,10 +1709,10 @@ usermodel.mod <-function(covstruc, estimation="ML", model = "", CFIcalc=TRUE, st
         results$Unstand_SE<-as.numeric(results$Unstand_SE)
         results$STD_Genotype_SE<-as.numeric(results$STD_Genotype_SE)
         if(parseResults){
-          results.parsed<-semplate$parseGenomicSEMResult(resultDf = uModel$results)
+          results.parsed<-semplate$parseGenomicSEMResult(resultDf = results)
         }
         
-        if(generateDOT & !is.null(uModel$results.parsed)){
+        if(generateDOT & !is.null(results.parsed)){
           path.graph.dot<-semplate$generateDOT(nodeDf = results.parsed$nodeDf, edgeDf = results.parsed$edgeDf)
         }
       }
