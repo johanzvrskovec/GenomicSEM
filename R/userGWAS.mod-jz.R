@@ -204,9 +204,9 @@ userGWAS.mod<-function(covstruc=NULL,SNPs=NULL,estimation="DWLS",model="",modelc
       
       #mod change - moved the printing here and using print rather that cat.
       if(i == 1){
-        print(paste0("Running Model: ", i, "\n"))
+        print(paste0("Running Model: ", i))
       }else if(i %% 100==0) {
-          print(paste0("Running Model: ", i, "\n"))
+          print(paste0("Running Model: ", i))
         }
       
       #create empty shell of V_SNP matrix
