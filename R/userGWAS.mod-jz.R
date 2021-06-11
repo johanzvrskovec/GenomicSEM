@@ -1,4 +1,4 @@
-userGWAS.mod<-function(covstruc=NULL,SNPs=NULL,estimation="DWLS",model="",modelchi=TRUE,printwarn=TRUE,sub=FALSE,cores=NULL,toler=FALSE,SNPSE=FALSE,parallel=TRUE,GC="standard",MPI=FALSE){ 
+userGWAS.mod<-function(covstruc=NULL,SNPs=NULL,estimation="DWLS",model="",modelchi=TRUE,printwarn=TRUE,sub=FALSE,cores=NULL,toler=FALSE,SNPSE=FALSE,parallel=FALSE,GC="standard",MPI=FALSE){ 
   time<-proc.time()
   
   if(exists("Output")){
@@ -205,10 +205,9 @@ userGWAS.mod<-function(covstruc=NULL,SNPs=NULL,estimation="DWLS",model="",modelc
       #mod change - moved the printing here and using print rather that cat.
       if(i == 1){
         print(paste0("Running Model: ", i, "\n"))
-      }else{
-        if(i %% 1000==0) {
+      }else if(i %% 100==0) {
           print(paste0("Running Model: ", i, "\n"))
-        }}
+        }
       
       #create empty shell of V_SNP matrix
       V_SNP<-diag(k)
