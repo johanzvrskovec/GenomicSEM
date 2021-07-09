@@ -27,6 +27,12 @@ sumstats <- function(files,ref,trait.names=NULL,se.logit,OLS=NULL,linprob=NULL,p
   if(parallel == FALSE){
     
     log2<-paste(trait.names,collapse="_")
+    log2<-str_remove_all(log2, "/")
+    
+    #subset log name to first 200 characters    
+    if(object.size(log2) > 200){
+      log2<-substr(log2,1,100)
+    }
     
     log.file <- file(paste0(log2, "_sumstats.log"),open="wt")
     
@@ -100,7 +106,7 @@ sumstats <- function(files,ref,trait.names=NULL,se.logit,OLS=NULL,linprob=NULL,p
       
       names1<-hold_names
       if("P" %in% hold_names) cat(print(paste("Interpreting the P column as the P column.")),file=log.file,sep="\n",append=TRUE)
-      hold_names[hold_names %in%c("P","PVALUE","PVAL","P_VALUE","P-VALUE","P.VALUE","P_VAL","GC_PVALUE")] <- "P"
+      hold_names[hold_names %in%c("P","PVALUE","PVAL","P_VALUE","P-VALUE","P.VALUE","P_VAL","GC_PVALUE","PVAL_ESTIMATE")] <- "P"
       if(length(base::setdiff(names1,hold_names)) > 0) cat(print(paste("Interpreting the", setdiff(names1, hold_names), "column as the P column.")),file=log.file,sep="\n",append=TRUE)
       
       names1<-hold_names
@@ -153,6 +159,11 @@ sumstats <- function(files,ref,trait.names=NULL,se.logit,OLS=NULL,linprob=NULL,p
       hold_names[hold_names %in%c("MAF", "CEUAF", "FREQ1", "EAF", "FREQ1.HAPMAP", "FREQALLELE1HAPMAPCEU", "FREQ.ALLELE1.HAPMAPCEU", "EFFECT_ALLELE_FREQ", "FREQ.A1")] <- "MAF_Other"
       
       names(files[[i]]) <- hold_names
+      
+      b<-nrow(files[[i]])
+      files[[i]]<-files[[i]][!duplicated(files[[i]][c("SNP","A1","A2")]),]
+      cat(print(paste((b-nrow(files[[i]])), "rows were removed from the", filenames[i], "summary statistics file due to entries that were duplicated across rsID, A1, and A2.")),file=log.file,sep="\n",append=TRUE)
+      
       
       # Compute N as N cases and N control if reported:
       if("N_CAS" %in% colnames(files[[i]]) & "N_CON" %in% colnames(files[[i]])){
@@ -398,7 +409,7 @@ if(int > length){
       
       names1<-hold_names
       if("P" %in% hold_names) cat(print(paste("Interpreting the P column as the P column.")),file=log.file,sep="\n",append=TRUE)
-      hold_names[hold_names %in%c("P","PVALUE","PVAL","P_VALUE","P-VALUE","P.VALUE","P_VAL","GC_PVALUE")] <- "P"
+      hold_names[hold_names %in%c("P","PVALUE","PVAL","P_VALUE","P-VALUE","P.VALUE","P_VAL","GC_PVALUE","PVAL_ESTIMATE")] <- "P"
       if(length(base::setdiff(names1,hold_names)) > 0) cat(paste("Interpreting the", setdiff(names1, hold_names), "column as the P column."),file=log.file,sep="\n",append=TRUE)
       
       names1<-hold_names
@@ -455,6 +466,11 @@ if(int > length){
       hold_names[hold_names %in%c("MAF","maf", "CEUaf", "Freq1", "EAF", "Freq1.Hapmap", "FreqAllele1HapMapCEU", "Freq.Allele1.HapMapCEU", "EFFECT_ALLELE_FREQ", "Freq.A1")] <- "MAF_Other"
       
       names(files2) <- hold_names
+      
+      b<-nrow(files2)
+      files2<-files2[!duplicated(files2[c("SNP","A1","A2")]),]
+      cat(print(paste((b-nrow(files2)), "rows were removed from the", filenames[i], "summary statistics file due to entries that were duplicated across rsID, A1, and A2.")),file=log.file,sep="\n",append=TRUE)
+      
       
       # Compute N as N cases and N control if reported:
       if("N_CAS" %in% colnames(files2) & "N_CON" %in% colnames(files2)){
